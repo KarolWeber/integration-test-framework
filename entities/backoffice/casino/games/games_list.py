@@ -62,7 +62,7 @@ class Game:
             enabled_free_spins=data.get('enabledFreeSpins'),
             has_demo=data.get('hasDemo'),
             live=data.get('live'),
-            provider_game_data=ProviderGameData.from_dict(data.get('providerGameData'))
+            provider_game_data=[ProviderGameData.from_dict(pgd) for pgd in data.get('providerGameData', [])]
         )
 
 
