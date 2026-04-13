@@ -1,32 +1,32 @@
-# ⚠️Repozytorium tylko do wglądu
+# An anonymized production-grade integration test framework used in a real-world commercial environment.
 
 ---
 
-# Integration Test Framework 
+# Integration Test Framework
 
-Framework do pisania i uruchamiania testów automatycznych dla platformy
-kasynowej.
-
----
-
-## Spis treści
-
-- [Instalacja](#instalacja)
-- [Konfiguracja](#konfiguracja)
-- [Struktura projektu](#struktura-projektu)
-- [Jak pisać nowe testy](#jak-pisać-nowe-testy)
-- [Przykładowy test](#przykładowy-test)
-- [Serwisy](#serwisy)
-- [Uruchamianie testów](#uruchamianie-testów)
-- [Logowanie i raportowanie](#logowanie-i-raportowanie)
-- [Jakość kodu](#jakość-kodu)
+A framework for writing and running automated tests for a casino platform.
 
 ---
 
-## Instalacja
+## Table of contents
 
-Framework działa na Python 3.13.7.
-Instalacja wymaganych bibliotek
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Project structure](#project-structure)
+- [How to write new tests](#how-to-write-new-tests)
+- [Sample test](#sample-test)
+- [Services](#services)
+- [Running tests](#running-tests)
+- [Logging and reporting](#logging-and-reporting)
+- [Code quality](#code-quality)
+- [Known limitations and possible improvements](#known-limitations-and-possible-improvements)
+
+---
+
+## Installation
+
+The framework runs on Python 3.13.7.
+Install the required dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -34,10 +34,10 @@ pip install -r requirements.txt
 
 ---
 
-## Konfiguracja
+## Configuration
 
-Należy skonfigurować zmienne środowiskowe w pliku .env
-
+Environment variables must be configured in the `.env` file.
+Example:
 - PLAYER_API='url'
 - ADMIN_API='url'
 - PROVIDER_ONE='url'
@@ -49,38 +49,40 @@ Należy skonfigurować zmienne środowiskowe w pliku .env
 
 ---
 
-## Struktura projektu
+## Project structure
 
-- api -> Klienci i serwisy API
-    - clients -> Klienci do komunikacji API
-    - services -> Serwisy logiki biznesowej
-    - request_api.py -> Wysyłka żądań HTTP
-- entities -> Encje i modele danych zwracanych przez API
-- infrastructure -> Pliki konfiguracyjne
-- tests -> Folder z testami
-- urls -> Adresy URL API
-- utils -> Funkcje pomocnicze
-    - assertions -> Funkcje budujące asercje i raporty
-    - cleanup -> Funkcje czyszczące środowisko
-    - converters -> Konwertery danych
-    - enums -> Enumy
-    - files -> Funkcje zarządające plikami
-    - generators -> Generatory danych
-    - logging -> Logowanie testów
-    - mappers -> Mappery
-    - payloads -> Payloady
-    - reports -> Konwersja raportu allure do jednolitego pliku HTML
-    - resources -> Pliki używane w testach
-    - waiters -> Funkcje oczekujące na określone warunki
+- api -> API clients and services
+    - clients -> API communication clients
+    - services -> Business logic services
+    - request_api.py -> HTTP request handling
+- entities -> API response entities and data models
+- infrastructure -> Configuration files
+- tests -> Test directory
+    - integration -> Integration tests
+        - Test files must follow pattern: test_*.py or *_test.py
+- urls -> API endpoint definitions
+- utils -> Helper functions
+    - assertions -> Assertion builders and reporting utilities
+    - cleanup -> Environment cleanup functions
+    - converters -> Data converters
+    - enums -> Enums
+    - files -> File management utilities
+    - generators -> Test data generators
+    - logging -> Test logging
+    - mappers -> Data mappers
+    - payloads -> Request payloads
+    - reports/report_generator.py -> Allure report conversion to a unified HTML file
+    - resources -> Test resource files
+    - waiters -> Functions waiting for specific conditions
 
 ---
 
-## Jak pisać nowe testy
+## How to write new tests
 
-Każdy test w frameworku powinien mieć spójny układ i wykorzystywać wspólne komponenty.
+Each test in the framework should follow a consistent structure and use shared components.
 
-Powinien mieć określony tytuł `@allure.title()` oraz wpływ `@allure.severity()` </br>
-Allure umożliwia wykorzystanie następującuch poziomów:
+It should include a defined title using `@allure.title()` and a severity level using `@allure.severity()` </br>
+Allure supports the following severity levels:
 
 - BLOCKER
 - CRITICAL
@@ -88,74 +90,73 @@ Allure umożliwia wykorzystanie następującuch poziomów:
 - MINOR
 - TRIVIAL
 
-W celu prawidłowego raportowania należy w teście przekazać obiekt request, używany przez pytest. </br>
-Na początku testu należy zainicjalizować klasę asercji `CheckAssertions`, która odpowiada za:
+The pytest `request` fixture is required by `CheckAssertions`. </br>
+At the beginning of each test, the `CheckAssertions` class should be initialized. It is responsible for:
 
-- dodawanie i przechowywanie asercji,
-- sprawdzanie wyników testu,
-- generowanie czytelnych raportów w Allure (sekcja stdout),
-- automatyczne tworzenie nazw testów na podstawie ich ścieżki.
+- adding and storing assertions,
+- validating test results,
+- generating readable Allure reports (stdout section),
+- automatically creating test names based on their path.
 
-Metoda `assertion()` klasy `CheckAssertions` umożliwia dodanie wielu asercji do jednego testu,
-natomiast metoda `check_assertions()` uruchamia ich weryfikację i zwraca wynik końcowy testu.
+The `assertion()` method of the `CheckAssertions` class allows multiple assertions to be added within a single test,
+while the `check_assertions()` method executes their validation and returns the final test result.
 
 ---
 
-## Przykładowy test
+## Sample test
 
 ```
-@allure.title('Provider one player authentication') # Tytuł testu
-@allure.severity(allure.severity_level.NORMAL) # Wpływ testu
-def test_provider_one_player_authentication(self, request): 
-    ca = CheckAssertions(request=request) -# Inicjalizacja klasy asercji
-    
-    player = PlayerService() # Inicjalizacja kontekstu gracza
-    player.user.login() # Logowanie gracza
+@allure.title('Provider one player authentication')  # Test title
+@allure.severity(allure.severity_level.NORMAL)  # Test severity
+def test_provider_one_player_authentication(self, request):
+    ca = CheckAssertions(request=request)  # Initialize assertion class
 
-    admin = AdminService() # Inicjalizacja kontekstu administratowa
-    admin.user.login() # Logowanie administratora
-    game = admin.technical.game.create_custom_game() # Stworzenie gry technicznej przez administratora
+    player = PlayerService()  # Initialize player context
+    player.user.login()  # Player login
 
-    player_run_game = player.game.run_provider_one_game(game=custom_game) # Uruchomienie sesji gry 
+    admin = AdminService()  # Initialize admin context
+    admin.user.login()  # Admin login
+    custom_game = admin.technical.game.create_custom_game()  # Create a technical game via admin
 
-    ca.assertion( # Dodanie asercji
-                 name="Provider one authenticate status", # Nazwa asercji
-                 expected="SUCCESS", # Spodziewany wynik testu
-                 current=player_run_game.authenticate_status, # Uzyskany rezultat
-                 operator='eq' # Operator asercji
-                )
-    ca.check_assertions() # Uruchomienie sprawdzenia asercji i wygenerowanie raportu
+    player_run_game = player.game.run_provider_one_game(game=custom_game)  # Start game session
+
+    ca.assertion(  # Add assertion
+        name="Provider one authenticate status",  # Assertion name
+        expected="SUCCESS",  # Expected result
+        current=player_run_game.authenticate_status,  # Actual result
+        operator='eq'  # Assertion operator
+    )
+
+    ca.check_assertions()  # Execute assertions and generate report
 ```
 
 ---
 
-## Serwisy
+## Services
 
-Framework udostępnia zestaw serwisów umożliwiających komunikację z API i
-wykonywanie operacji testowych. </br>
-Każdy serwis odpowiada za określony obszar funkcjonalny platformy.
+The framework provides a set of services for API communication and test operations. </br>
+Each service is responsible for a specific functional area of the platform.
 
-- AdminService -> umożliwia zarządzanie platformą kasynową (np. użytkownikami,
-  grami, bonusami).
+- AdminService -> enables management of the casino platform (e.g. users,
+  games, bonuses).
 
-- PlayerService -> umożliwia operacje po stronie gracza, takie jak logowanie,
-  uruchamianie gier czy rozgrywki.
+- PlayerService -> enables player-side operations such as login,
+  game execution, and gameplay.
 
-<u>Obecnie obsługują jedynie podstawowy zakres operacji niezbędnych do testów
-integracji z dostawcami.</u>
+<u>Currently, they only support the basic operations required for integration testing with providers.</u>
 
-- ProviderOneService – obsługuje integrację z API dostawcy Provider One, m.in. autoryzację,
-  obstawianie zakładów i wypłaty wygranych.
-- ProviderTwoService – obsługuje integrację z API dostawcy Provider Two, m.in. autoryzację,
-  obstawianie zakładów i wypłaty wygranych.
+- ProviderOneService – handles integration with Provider One API, including authorization,
+  betting, and payout processing.
+- ProviderTwoService – handles integration with Provider Two API, including authorization,
+  betting, and payout processing.
 
 ---
 
-## Uruchamianie testów
+## Running tests
 
 ***
 
-Uruchamianie wszystkich testów:
+Running all tests:
 
 ```bash
 pytest
@@ -163,25 +164,25 @@ pytest
 
 ***
 
-Uruchamianie testów z wybranymi tagami(np. integration_test_provider_one):
+Running tests with selected tags(e.g. integration_test_provider_one):
 
 ```bash
 pytest -m integration_test_provider_one
 ```
 
-Lista dostępnych tagów znajduje się w pliku pytest.ini
+The list of available tags is in the pytest.ini file
 
 ***
 
-Uruchamianie testów wraz z generowaniem raportu allure:
+Running tests and generating an allure report:
 
 ```bash
-pytest --alluredir=allure-result
+pytest --alluredir=allure-results
 ```
 
 ***
 
-Uruchomienie raportu lokalnie:
+Running a report locally:
 
 ```bash
 allure serve allure-results
@@ -189,35 +190,41 @@ allure serve allure-results
 
 ***
 
-Generowanie raportu po zakończeniu sesji testowej:
+Generating a report after the test session ends:
 
 ```bash
 allure generate
 ```
 
-Aby wygenerować raport w scalonym pliku HTML po wygenerowaniu raportu należy
-uruchomić skrypt `utils/reports/report_generator.py`
+To generate a report in a merged HTML file, after generating the report, run the script `utils/reports/report_generator.py`
 
 ---
 
-## Logowanie i raportowanie
+## Logging and reporting
 
-- Framework wykorzystuje Allure do raportowania wyników testów.
-- Klasę StepLogger stosujemy do logowania kroków testu i odpowiedzi API.
-- Klasę CheckAssertions wykonywanuje wiele asercji nie zakańczając testu póki
-  nie zostaną sprawdzone wszystkie, w przypadku kiedy jedna z asercji w jednym
-  teście z pełnym opisem, wartościami oczekiwanymi i uzyskanymi.
+- The framework uses Allure for test reporting.
+- The `StepLogger` class is used for logging test steps and API responses if added inside service methods.
+- The `CheckAssertions` class executes multiple assertions without stopping the test until all of them are evaluated. In case of failures, it provides a full report with descriptions, expected values, and actual results.
 
 ---
 
-## Jakość kodu
+## Code quality
 
-Projekt wykorzystuje `flake8` do statycznej analizy kodu i utrzymania zgodności ze standardem PEP8.
+The project uses `flake8` for static code analysis and to maintain PEP8 compliance.
 
-Uruchomienie analizy kodu:
+Run code analysis:
 
 ```bash
 flake8 .
 ```
+
+---
+
+## Known limitations and possible improvements
+
+- Test tagging system (pytest markers) is not fully implemented yet and can be added for better test grouping and execution control
+- StepLogger uses global in-memory state which may require isolation improvements for parallel test execution
+- Logging system is manual and could be extended with automatic HTTP interception
+- Test execution configuration is basic and could be extended with CI pipelines and test matrix support
 
 ---
