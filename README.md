@@ -1,10 +1,8 @@
-# An anonymized production-grade integration test framework used in a real-world commercial environment.
+An anonymized Python-based integration testing framework designed to validate real-money gaming platform workflows in a distributed environment.
 
----
+It supports end-to-end validation of player lifecycles, wallet operations, game sessions, bonus engines, and third-party provider integrations across multiple execution contexts.
 
-# Integration Test Framework
-
-A framework for writing and running automated tests for a casino platform.
+The framework is built with a layered architecture to ensure separation between test orchestration, business logic, and API communication.
 
 ---
 
@@ -36,44 +34,44 @@ pip install -r requirements.txt
 
 ## Configuration
 
-Environment variables must be configured in the `.env` file.
-Example:
-- PLAYER_API='url'
-- ADMIN_API='url'
-- PROVIDER_ONE='url'
-- PROVIDER_ONE_ORIGIN='url'
-- PROVIDER_TWO='url'
-- PLAYER_EMAIL='@example.com'
-- ADMIN_TEST_USERNAME='username@example.com'
-- ADMIN_TEST_PASSWORD='password'
+Environment-specific configuration is managed via `.env` files to separate test logic from runtime environments.
+
+This allows the same test suite to be executed across multiple environments (local, staging, integration) without code changes.
 
 ---
 
 ## Project structure
 
-- api -> API clients and services
-    - clients -> API communication clients
-    - services -> Business logic services
-    - request_api.py -> HTTP request handling
-- entities -> API response entities and data models
-- infrastructure -> Configuration files
-- tests -> Test directory
-    - integration -> Integration tests
-        - Test files must follow pattern: test_*.py or *_test.py
-- urls -> API endpoint definitions
-- utils -> Helper functions
-    - assertions -> Assertion builders and reporting utilities
-    - cleanup -> Environment cleanup functions
-    - converters -> Data converters
-    - enums -> Enums
-    - files -> File management utilities
-    - generators -> Test data generators
-    - logging -> Test logging
-    - mappers -> Data mappers
-    - payloads -> Request payloads
-    - reports/report_generator.py -> Allure report conversion to a unified HTML file
-    - resources -> Test resource files
-    - waiters -> Functions waiting for specific conditions
+The framework is organized into a layered architecture that separates test execution, domain logic, API communication, and shared utilities.
+
+- api → Core API layer responsible for communication with external systems
+    - clients → Low-level API communication handlers (HTTP requests, responses)
+    - services → Domain-level business logic and orchestration of API flows
+    - request_api.py → Central HTTP abstraction layer (authentication, headers, error handling)
+
+- entities → Data models representing API responses and structured objects used across services and tests
+
+- infrastructure → Environment configuration and runtime dependencies (credentials, settings)
+
+- tests → Test suites focused on system and integration-level validation
+    - integration → End-to-end integration tests for platform workflows
+      (test files follow pattern: test_*.py or *_test.py)
+
+- urls → Centralized API endpoint definitions used by clients
+
+- utils → Shared utilities supporting test execution and framework operations
+    - assertions → Assertion engine and reporting utilities
+    - cleanup → Environment and data cleanup helpers
+    - converters → Data transformation utilities
+    - enums → Shared enumerations for domain constants
+    - files → File handling utilities
+    - generators → Test data generation
+    - logging → Logging and step tracking utilities
+    - mappers → Data mapping between API and domain objects
+    - payloads → Request payload builders
+    - reports → Report generation utilities (Allure → unified HTML reports)
+    - resources → Static test resources
+    - waiters → Synchronization and condition waiting utilities
 
 ---
 
@@ -134,21 +132,17 @@ def test_provider_one_player_authentication(self, request):
 
 ## Services
 
-The framework provides a set of services for API communication and test operations. </br>
-Each service is responsible for a specific functional area of the platform.
+The framework is built around domain-specific services that abstract platform functionality into business-oriented operations.
 
-- AdminService -> enables management of the casino platform (e.g. users,
-  games, bonuses).
+Each service sits on top of API clients and is responsible for orchestration and domain logic:
 
-- PlayerService -> enables player-side operations such as login,
-  game execution, and gameplay.
+- AdminService → provides control over the platform (users, games, bonuses, configuration)
+- PlayerService → simulates end-user behavior (authentication, gameplay, wallet operations)
+- Provider services → handle third-party game provider integrations (betting, wins, authentication flows)
 
-<u>Currently, they only support the basic operations required for integration testing with providers.</u>
+### Architecture flow:
 
-- ProviderOneService – handles integration with Provider One API, including authorization,
-  betting, and payout processing.
-- ProviderTwoService – handles integration with Provider Two API, including authorization,
-  betting, and payout processing.
+Test → Context (Player/Admin abstraction) → Service Layer (domain orchestration) → Client Layer (HTTP communication) → External API systems
 
 ---
 
@@ -220,11 +214,13 @@ flake8 .
 
 ---
 
-## Known limitations and possible improvements
+## Known Limitations and Trade-offs
 
-- Test tagging system (pytest markers) is not fully implemented yet and can be added for better test grouping and execution control
-- StepLogger uses global in-memory state which may require isolation improvements for parallel test execution
-- Logging system is manual and could be extended with automatic HTTP interception
-- Test execution configuration is basic and could be extended with CI pipelines and test matrix support
+The framework intentionally prioritizes test readability and fast test development over strict architectural purity in certain areas.
+
+- Test tagging system is simplified to reduce configuration overhead, with future support planned for dynamic grouping and filtering
+- StepLogger currently uses in-memory state, which may require enhancements for highly parallel execution environments
+- HTTP interception is not centralized to keep service-level behavior explicit and easier to debug
+- CI/CD orchestration is intentionally excluded, as the framework focuses on test logic rather than execution infrastructure
 
 ---
